@@ -38,62 +38,85 @@
 import os
 import subprocess
 
-migrations = 'Migrations'
-current_dir = os.path.dirname(os.path.abspath(__file__))
 
-if __name__ == '__main__':
+# Состояния поиска. 0 - новый поиск, 1 - продолжение поиска
+STATE_NEW_SEARCH = 0
+STATE_CONTINUE_SEARCH = 1
+
+
+def launch_chrome():
+    print()
+    input('После нажатия ввод, запустится браузер chrome с открытой страницей google.com')
+
+    try:
+        # По какаим то причинам иногда запуск выполняется с командой Popen иногда с командой Run
+        subprocess.Popen('cmd /c start chrome "http://www.google.com" --new-window', shell=True)
+    except OSError:
+        print('Ошибка запуска браузера')
+
+
+def main():
+    migrations = 'Migrations'
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
     # ваша логика
     print('Инструкция:')
     print('1. Ввод пустой строки в качестве начального значения поиска перейдет ко второй части задания.')
     print('2. Ввод пустой строки в качестве продолжающего значения поиска начнет новый поиск.')
     print()
 
-    find_state = 0; # Состояние поиска. 0 - новый поиск, 1 - продолжение поиска
+    find_state = STATE_NEW_SEARCH;
 
     # формируем абсолютный путь к директории Migrations
     migration_dir = os.path.join(current_dir, 'Migrations')
 
     # сформируем список sql файлов для дальнешйего поиска нужных строк файлов
-    full_list = os.listdir(migration_dir)
+    full_list = list()
+    for path in os.listdir(migration_dir):
+        file_name, file_extension = os.path.splitext(path)
 
-    print('Всего файлов в директории поиска:', len(full_list))
+        if file_extension.lower() == '.sql':
+            full_list.append(file_name)
+
+    print('Всего файлов в директории поиска: {}'.format(len(full_list)))
     print()
 
     # список найденных файлов
     find_list = list()
 
     while True:
-        if find_state == 0:
-            str = input('Введите строку начала поиска:')
-
+        if find_state == STATE_NEW_SEARCH:
             find_list = list(full_list)
-        else:
-            str = input('Введите строку продолжения поиска:')
 
-        if str == '':
-            if find_state == 0:
+            print()
+            str = input('Введите строку начала поиска:')
+        elif find_state == STATE_CONTINUE_SEARCH:
+            print()
+            str = input('Введите строку продолжения поиска:')
+        else:
+            print('Неизвестное сосотяние поиска')
+            break
+
+        if not str:
+            if find_state == STATE_NEW_SEARCH:
                 break
             else:
-                find_state = 0
+                find_state = STATE_NEW_SEARCH
 
                 continue
         else:
-            find_state = 1
+            find_state = STATE_CONTINUE_SEARCH
 
-        for i in range(0, len(find_list)):
-            path = find_list.pop(0)
-
-            file_name, file_extension = os.path.splitext(path)
-
-            if file_extension.lower() != '.sql':
-                continue
-
+        new_find_list = list()
+        for path in find_list:
             with open(os.path.join(migration_dir, path)) as file:
                 for line in file:
                     if str in line:
-                        find_list.append(path)
+                        new_find_list.append(path)
 
                         break
+
+        find_list = new_find_list
 
         if len(find_list) > 10:
             print('... большой список файлов ...')
@@ -101,22 +124,17 @@ if __name__ == '__main__':
            for path in find_list:
                print(path)
 
-        print('Всего найдено файлов:', len(find_list))
+        print('Всего найдено файлов: {}'.format(len(find_list)))
 
     print()
     print('---------------------------------------------------------------------------')
     print('Вторая часть задания.')
 
-    print()
-    input('После нажатия ввод, запустится браузер chrome с открытой страницей google.com')
-
-    try:
-        # По какаим то причинам иногда запуск выполняется с командой Popen иногда с командой Run
-        subprocess.Popen('cmd /c start chrome http://www.google.com --new-window', shell = True)
-    except OSError:
-        print('Ошибка запуска браузера')
+    launch_chrome()
 
     print()
     print('Работа завершена.')
 
-    pass
+
+if __name__ == '__main__':
+    main()
