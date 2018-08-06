@@ -35,8 +35,9 @@
 
 # не забываем организовывать собственный код в функции
 
-import os
 import subprocess
+import os
+from pprint import pprint
 
 
 # Состояния поиска. 0 - новый поиск, 1 - продолжение поиска
@@ -56,8 +57,10 @@ def launch_chrome():
 
 
 def main():
-    migrations = 'Migrations'
     current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # формируем абсолютный путь к директории Migrations
+    migration_dir = os.path.join(current_dir, 'Migrations')
 
     # ваша логика
     print('Инструкция:')
@@ -65,21 +68,18 @@ def main():
     print('2. Ввод пустой строки в качестве продолжающего значения поиска начнет новый поиск.')
     print()
 
-    find_state = STATE_NEW_SEARCH;
-
-    # формируем абсолютный путь к директории Migrations
-    migration_dir = os.path.join(current_dir, 'Migrations')
+    find_state = STATE_NEW_SEARCH
 
     # сформируем список sql файлов для дальнешйего поиска нужных строк файлов
     full_list = list()
-    for path in os.listdir(migration_dir):
+    file_list = os.listdir(migration_dir)
+    for path in file_list:
         file_name, file_extension = os.path.splitext(path)
 
         if file_extension.lower() == '.sql':
-            full_list.append(file_name)
+            full_list.append(path)
 
     print('Всего файлов в директории поиска: {}'.format(len(full_list)))
-    print()
 
     # список найденных файлов
     find_list = list()
@@ -89,15 +89,15 @@ def main():
             find_list = list(full_list)
 
             print()
-            str = input('Введите строку начала поиска:')
+            search_string = input('Введите строку начала поиска:')
         elif find_state == STATE_CONTINUE_SEARCH:
             print()
-            str = input('Введите строку продолжения поиска:')
+            search_string = input('Введите строку продолжения поиска:')
         else:
             print('Неизвестное сосотяние поиска')
             break
 
-        if not str:
+        if not search_string:
             if find_state == STATE_NEW_SEARCH:
                 break
             else:
@@ -111,7 +111,7 @@ def main():
         for path in find_list:
             with open(os.path.join(migration_dir, path)) as file:
                 for line in file:
-                    if str in line:
+                    if search_string in line:
                         new_find_list.append(path)
 
                         break
@@ -121,8 +121,8 @@ def main():
         if len(find_list) > 10:
             print('... большой список файлов ...')
         else:
-           for path in find_list:
-               print(path)
+            print('Список файлов:')
+            pprint(find_list)
 
         print('Всего найдено файлов: {}'.format(len(find_list)))
 
